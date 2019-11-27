@@ -14,3 +14,7 @@ HEADERS += \
 SOURCES += projet/src/main.cpp \
     projet/src/terrain.cpp
 
+OTHER_FILES += \
+    media/terraindemo/opengl.frag \
+    media/terraindemo/opengl.vert
+

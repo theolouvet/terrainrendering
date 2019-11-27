@@ -1,13 +1,21 @@
+#version 120
 uniform mat4 mWorldViewProj;
 uniform mat4 mInvWorld;
 uniform mat4 mTransWorld;
 uniform vec3 mLightPos;
 uniform vec4 mLightColor;
 
+varying float pos;
+
 void main(void)
 {
-	gl_Position = mWorldViewProj * gl_Vertex;
-	
+
+        gl_Position = mWorldViewProj * gl_Vertex;
+        if(gl_Vertex.y < 0.5){
+            pos = 0.0;
+        }else{
+            pos = 1.0;
+        }
 	vec4 normal = vec4(gl_Normal, 0.0);
 	normal = mInvWorld * normal;
 	normal = normalize(normal);
@@ -21,6 +29,6 @@ void main(void)
 	
 	vec4 tmp = mLightColor * tmp2;
 	gl_FrontColor = gl_BackColor = vec4(tmp.x, tmp.y, tmp.z, 0.0);
-	
+
 	gl_TexCoord[0] = gl_MultiTexCoord0;
 }
