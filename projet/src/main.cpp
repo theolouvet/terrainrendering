@@ -140,6 +140,8 @@ int main(){
     //edit shader test
     io::path vsFileName = "media/terraindemo/opengl.vert"; // filename for the vertex shader
     io::path psFileName = "media/terraindemo/opengl.frag"; // filename for the pixel shader
+    io::path vsQuad = "media/terraindemo/quad.vert"; // filename for the vertex shader
+    io::path psQuad = "media/terraindemo/quad.frag"; // filename for the pixel shader
 
     if (!driver->queryFeature(video::EVDF_PIXEL_SHADER_1_1) &&
             !driver->queryFeature(video::EVDF_ARB_FRAGMENT_PROGRAM_1))
@@ -169,7 +171,7 @@ int main(){
         vsFileName, "vertexMain", video::EVST_VS_1_1,
         psFileName, "pixelMain", video::EPST_PS_1_1,
         mc, video::EMT_SOLID, 0, shadingLanguage);
-    mc->drop();
+    //mc->drop();
 
     // add terrain scene node
     
@@ -182,14 +184,7 @@ int main(){
        //ter.setMaterialTexture(1, driver->getTexture("media/terraindemo/detailmap3.jpg"));
        ter.setMaterialType((video::E_MATERIAL_TYPE)newMaterialType1);
 
-       /*scene::CDynamicMeshBuffer* buffer = new scene::CDynamicMeshBuffer(video::EVT_2TCOORDS, video::EIT_16BIT);
-       ter.monterrain->getMeshBufferForLOD(*buffer, 0);
-       video::S3DVertex2TCoords* data = (video::S3DVertex2TCoords*)buffer->getVertexBuffer().getData();
-       // Work on data or get the IndexBuffer with a similar call.
-       buffer->drop(); // When done drop the buffer again.
-       // create skybox and skydome
-       driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, false);
-*/
+
        scene::ISceneNode* skybox=smgr->addSkyBoxSceneNode(
            driver->getTexture("media/terraindemo/irrlicht2_up.jpg"),
            driver->getTexture("media/terraindemo/irrlicht2_dn.jpg"),
@@ -201,7 +196,23 @@ int main(){
 
        driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, true);
 
-        
+       //add quad
+       const irr::scene::IGeometryCreator *geomentryCreator = smgr->getGeometryCreator();
+       s32 newMaterialType2 = 0;
+
+       newMaterialType2 = gpu->addHighLevelShaderMaterialFromFiles(
+           vsQuad, "vertexMain", video::EVST_VS_1_1,
+           psQuad, "pixelMain", video::EPST_PS_1_1,
+           mc, video::EMT_TRANSPARENT_ALPHA_CHANNEL, 0, shadingLanguage);
+       irr::scene::IMesh* plane = geomentryCreator->createPlaneMesh(
+                   irr::core::dimension2d<irr::f32>(300, 300),
+                   irr::core::dimension2d<irr::u32>(40, 40));
+
+       irr::scene::ISceneNode* ground = smgr->addMeshSceneNode(plane);
+       ground->setMaterialTexture(0, driver->getTexture("media/terraindemo/water.jpg"));
+       ground->setPosition(irr::core::vector3df(5500.f, 0.f, 4500.f));
+       ground->setMaterialType((video::E_MATERIAL_TYPE)newMaterialType2);
+       plane->setMaterialFlag(irr::video::EMF_LIGHTING, false);
 
 
     int lastFPS = -1;

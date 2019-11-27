@@ -16,5 +16,7 @@ SOURCES += projet/src/main.cpp \
 
 OTHER_FILES += \
     media/terraindemo/opengl.frag \
-    media/terraindemo/opengl.vert
+    media/terraindemo/opengl.vert \
+    media/terraindemo/quad.frag \
+    media/terraindemo/quad.vert
 

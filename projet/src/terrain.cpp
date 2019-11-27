@@ -25,6 +25,7 @@ const io::path& heightMapFileName){
         4                   // smoothFactor
         );
      monterrain->scaleTexture(1.0f, 20.0f);
+
 }
 
 void terrain::setMaterialTexture(u32 i, video::ITexture* t){

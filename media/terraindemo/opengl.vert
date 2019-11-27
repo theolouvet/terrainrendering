@@ -5,17 +5,18 @@ uniform mat4 mTransWorld;
 uniform vec3 mLightPos;
 uniform vec4 mLightColor;
 
-varying float pos;
-
+varying float a;
 void main(void)
 {
 
+
         gl_Position = mWorldViewProj * gl_Vertex;
-        if(gl_Vertex.y < 0.5){
-            pos = 0.0;
-        }else{
-            pos = 1.0;
-        }
+
+
+
+        a = gl_Vertex.y;
+
+
 	vec4 normal = vec4(gl_Normal, 0.0);
 	normal = mInvWorld * normal;
 	normal = normalize(normal);
