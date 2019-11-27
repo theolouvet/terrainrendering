@@ -1,0 +1,3 @@
+/home/thep/Documents/terrainrenderingirrlicht/CMakeFiles/rebuild_cache.dir
+/home/thep/Documents/terrainrenderingirrlicht/CMakeFiles/pgm.dir
+/home/thep/Documents/terrainrenderingirrlicht/CMakeFiles/edit_cache.dir

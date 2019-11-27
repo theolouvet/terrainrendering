@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/thep/Documents/terrainrenderingirrlicht/projet/src/main.cpp
+irrlicht/irrlicht.h
+-
+iostream
+-
+terrain.h
+/home/thep/Documents/terrainrenderingirrlicht/projet/src/terrain.h
+
+/home/thep/Documents/terrainrenderingirrlicht/projet/src/terrain.cpp
+terrain.h
+/home/thep/Documents/terrainrenderingirrlicht/projet/src/terrain.h
+
+/home/thep/Documents/terrainrenderingirrlicht/projet/src/terrain.h
+irrlicht/irrlicht.h
+-
+
