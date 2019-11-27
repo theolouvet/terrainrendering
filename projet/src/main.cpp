@@ -17,44 +17,79 @@ using namespace gui;
 ISceneManager* smgr ;
 IrrlichtDevice *device;
 irr::SKeyMap keyMap[5];
-
+bool UseHighLevelShaders = true;
+bool UseCgShaders = false;
 
 class MyShaderCallBack : public video::IShaderConstantSetCallBack
 {
 public:
 
     virtual void OnSetConstants(video::IMaterialRendererServices* services,
-            s32 userData)
-    {
-        video::IVideoDriver* driver = services->getVideoDriver();
+                s32 userData)
+        {
+            video::IVideoDriver* driver = services->getVideoDriver();
 
-        core::matrix4 invWorld = driver->getTransform(video::ETS_WORLD);
-        services->setVertexShaderConstant("mInvWorld", invWorld.pointer(), 16);
-        core::matrix4 worldViewProj;
-        worldViewProj = driver->getTransform(video::ETS_PROJECTION);
-        worldViewProj *= driver->getTransform(video::ETS_VIEW);
-        worldViewProj *= driver->getTransform(video::ETS_WORLD);
-        // set camera position
-        core::vector3df pos = device->getSceneManager()->getActiveCamera()->getAbsolutePosition();
-        services->setVertexShaderConstant("mLightPos", reinterpret_cast<f32*>(&pos), 3);
-            
-        // set light color
-        video::SColorf col(0.0f,1.0f,1.0f,0.0f);
-        services->setVertexShaderConstant("mLightColor",reinterpret_cast<f32*>(&col), 4);
-        
+            // set inverted world matrix
+            // if we are using highlevel shaders (the user can select this when
+            // starting the program), we must set the constants by name.
 
-        // set transposed world matrix
-        core::matrix4 world = driver->getTransform(video::ETS_WORLD);
-        world = world.getTransposed();
-        services->setVertexShaderConstant("mTransWorld", world.pointer(), 16);
-        // set texture, for textures you can use both an int and a float setPixelShaderConstant interfaces (You need it only for an OpenGL driver).
-        s32 TextureLayerID = 0;
-        services->setPixelShaderConstant("myTexture", &TextureLayerID, 1);
-        services->setVertexShaderConstant("mWorldViewProj", worldViewProj.pointer(), 16);
+            core::matrix4 invWorld = driver->getTransform(video::ETS_WORLD);
+            invWorld.makeInverse();
 
-        
-       
-    }
+            if (UseHighLevelShaders)
+                services->setVertexShaderConstant("mInvWorld", invWorld.pointer(), 16);
+            else
+                services->setVertexShaderConstant(invWorld.pointer(), 0, 4);
+
+            // set clip matrix
+
+            core::matrix4 worldViewProj;
+            worldViewProj = driver->getTransform(video::ETS_PROJECTION);
+            worldViewProj *= driver->getTransform(video::ETS_VIEW);
+            worldViewProj *= driver->getTransform(video::ETS_WORLD);
+
+            if (UseHighLevelShaders)
+                services->setVertexShaderConstant("mWorldViewProj", worldViewProj.pointer(), 16);
+            else
+                services->setVertexShaderConstant(worldViewProj.pointer(), 4, 4);
+
+            // set camera position
+
+            core::vector3df pos = device->getSceneManager()->
+                getActiveCamera()->getAbsolutePosition();
+
+            if (UseHighLevelShaders)
+                services->setVertexShaderConstant("mLightPos", reinterpret_cast<f32*>(&pos), 3);
+            else
+                services->setVertexShaderConstant(reinterpret_cast<f32*>(&pos), 8, 1);
+
+            // set light color
+
+            video::SColorf col(0.0f,1.0f,1.0f,0.0f);
+
+            if (UseHighLevelShaders)
+                services->setVertexShaderConstant("mLightColor",
+                        reinterpret_cast<f32*>(&col), 4);
+            else
+                services->setVertexShaderConstant(reinterpret_cast<f32*>(&col), 9, 1);
+
+            // set transposed world matrix
+
+            core::matrix4 world = driver->getTransform(video::ETS_WORLD);
+            world = world.getTransposed();
+
+            if (UseHighLevelShaders)
+            {
+                services->setVertexShaderConstant("mTransWorld", world.pointer(), 16);
+
+                // set texture, for textures you can use both an int and a float setPixelShaderConstant interfaces (You need it only for an OpenGL driver).
+                s32 TextureLayerID = 0;
+                if (UseHighLevelShaders)
+                    services->setPixelShaderConstant("myTexture", &TextureLayerID, 1);
+            }
+            else
+                services->setVertexShaderConstant(world.pointer(), 10, 4);
+        }
 };
 
 
@@ -79,7 +114,7 @@ int main(){
     video::IGPUProgrammingServices* gpu = driver->getGPUProgrammingServices();
    
   
-    
+    const video::E_GPU_SHADING_LANGUAGE shadingLanguage = video::EGSL_DEFAULT;
     device->getCursorControl()->setVisible(false);
  
     keyMap[0].Action = irr::EKA_MOVE_FORWARD;  // avancer
@@ -103,18 +138,38 @@ int main(){
             camfree->setFarValue(30000.0f);
 
     //edit shader test
+    io::path vsFileName = "media/terraindemo/opengl.vert"; // filename for the vertex shader
+    io::path psFileName = "media/terraindemo/opengl.frag"; // filename for the pixel shader
 
-    core::matrix4 invWorld = driver->getTransform(video::ETS_WORLD);
+    if (!driver->queryFeature(video::EVDF_PIXEL_SHADER_1_1) &&
+            !driver->queryFeature(video::EVDF_ARB_FRAGMENT_PROGRAM_1))
+        {
+            device->getLogger()->log("WARNING: Pixel shaders disabled "\
+                "because of missing driver/hardware support.");
+            psFileName = "";
+        }
+
+        if (!driver->queryFeature(video::EVDF_VERTEX_SHADER_1_1) &&
+            !driver->queryFeature(video::EVDF_ARB_VERTEX_PROGRAM_1))
+        {
+            device->getLogger()->log("WARNING: Vertex shaders disabled "\
+                "because of missing driver/hardware support.");
+            vsFileName = "";
+        }
+
+
    
-    io::path vsFileName = "opengl.vert"; // filename for the vertex shader
-    io::path psFileName = "opengl.frag"; // filename for the pixel shader
+
     MyShaderCallBack* mc = new MyShaderCallBack();
     s32 newMaterialType1 = 0;
-    const video::E_GPU_SHADING_LANGUAGE shadingLanguage = video::EGSL_DEFAULT;
+
+    // create material from high level shaders (hlsl, glsl or cg)
+
     newMaterialType1 = gpu->addHighLevelShaderMaterialFromFiles(
-            vsFileName, "vertexMain", video::EVST_VS_1_1,
-            psFileName, "pixelMain", video::EPST_PS_1_1,
-            mc, video::EMT_SOLID, 0, shadingLanguage);
+        vsFileName, "vertexMain", video::EVST_VS_1_1,
+        psFileName, "pixelMain", video::EPST_PS_1_1,
+        mc, video::EMT_SOLID, 0, shadingLanguage);
+    mc->drop();
 
     // add terrain scene node
     
@@ -124,17 +179,17 @@ int main(){
        ter.terrainHM(smgr, heightMapFileName);
        ter.setMaterialFlag(video::EMF_LIGHTING, false);
        ter.setMaterialTexture(0, driver->getTexture(TextureFileName));
-       ter.setMaterialTexture(1, driver->getTexture("media/terraindemo/detailmap3.jpg"));
+       //ter.setMaterialTexture(1, driver->getTexture("media/terraindemo/detailmap3.jpg"));
        ter.setMaterialType((video::E_MATERIAL_TYPE)newMaterialType1);
 
-       scene::CDynamicMeshBuffer* buffer = new scene::CDynamicMeshBuffer(video::EVT_2TCOORDS, video::EIT_16BIT);
+       /*scene::CDynamicMeshBuffer* buffer = new scene::CDynamicMeshBuffer(video::EVT_2TCOORDS, video::EIT_16BIT);
        ter.monterrain->getMeshBufferForLOD(*buffer, 0);
        video::S3DVertex2TCoords* data = (video::S3DVertex2TCoords*)buffer->getVertexBuffer().getData();
        // Work on data or get the IndexBuffer with a similar call.
        buffer->drop(); // When done drop the buffer again.
        // create skybox and skydome
        driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, false);
-
+*/
        scene::ISceneNode* skybox=smgr->addSkyBoxSceneNode(
            driver->getTexture("media/terraindemo/irrlicht2_up.jpg"),
            driver->getTexture("media/terraindemo/irrlicht2_dn.jpg"),
