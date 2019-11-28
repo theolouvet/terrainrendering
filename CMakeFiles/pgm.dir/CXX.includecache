@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,15 +6,21 @@
 
 #IncludeRegexTransform: 
 
-/fs03/share/users/theo.louvet/home/Documents/terrainrendering/projet/src/main.cpp
+/home/thep/Documents/terrainrendering/projet/src/main.cpp
 irrlicht/irrlicht.h
 -
 iostream
 -
+chrono
+-
 terrain.h
-/fs03/share/users/theo.louvet/home/Documents/terrainrendering/projet/src/terrain.h
+/home/thep/Documents/terrainrendering/projet/src/terrain.h
 
-/fs03/share/users/theo.louvet/home/Documents/terrainrendering/projet/src/terrain.h
+/home/thep/Documents/terrainrendering/projet/src/terrain.cpp
+terrain.h
+/home/thep/Documents/terrainrendering/projet/src/terrain.h
+
+/home/thep/Documents/terrainrendering/projet/src/terrain.h
 irrlicht/irrlicht.h
 -
 

@@ -16,9 +16,9 @@ const io::path& heightMapFileName){
         heightMapFileName,
         0,                  // parent node
         -1,                 // node id
-        core::vector3df(0.f,-550.f, 0.f),     // position
+        core::vector3df(-3000,-144,-6049),     // position
         core::vector3df(0.f, 0.f, 0.f),     // rotation
-        core::vector3df(40.f, 4.4f, 40.f),  // scale
+        core::vector3df(50.f, 5.f, 50.f),  // scale (40,4,)
         video::SColor ( 255, 255, 255, 255 ),   // vertexColor
         5,                  // maxLOD
         scene::ETPS_17,             // patchSize

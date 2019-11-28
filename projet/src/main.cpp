@@ -1,7 +1,7 @@
 //#include <irrlicht.h>
 #include<irrlicht/irrlicht.h>
 #include <iostream>
-
+#include <chrono>
 #include "terrain.h"
 
 
@@ -13,12 +13,16 @@ using namespace io;
 using namespace gui;
 
  
-
+std::chrono::time_point<std::chrono::system_clock> start, end;
 ISceneManager* smgr ;
 IrrlichtDevice *device;
 irr::SKeyMap keyMap[5];
 bool UseHighLevelShaders = true;
 bool UseCgShaders = false;
+float t;
+scene::ISceneNode* skydome;
+core::vector3df ligth = vector3df(-5000,5000,14000);
+
 
 class MyShaderCallBack : public video::IShaderConstantSetCallBack
 {
@@ -57,15 +61,20 @@ public:
 
             core::vector3df pos = device->getSceneManager()->
                 getActiveCamera()->getAbsolutePosition();
-
+            
+            ligth.rotateXZBy(skydome->getRotation().Y/180);
             if (UseHighLevelShaders)
-                services->setVertexShaderConstant("mLightPos", reinterpret_cast<f32*>(&pos), 3);
+                services->setVertexShaderConstant("mLightPos", reinterpret_cast<f32*>(&ligth), 3);
+            else
+                services->setVertexShaderConstant(reinterpret_cast<f32*>(&ligth), 8, 1);
+            if (UseHighLevelShaders)
+                services->setVertexShaderConstant("mCamPos", reinterpret_cast<f32*>(&pos), 3);
             else
                 services->setVertexShaderConstant(reinterpret_cast<f32*>(&pos), 8, 1);
 
             // set light color
 
-            video::SColorf col(0.0f,1.0f,1.0f,0.0f);
+            video::SColorf col(1.0f,1.0f,1.0f,0.0f);
 
             if (UseHighLevelShaders)
                 services->setVertexShaderConstant("mLightColor",
@@ -74,6 +83,7 @@ public:
                 services->setVertexShaderConstant(reinterpret_cast<f32*>(&col), 9, 1);
 
             // set transposed world matrix
+            services->setVertexShaderConstant("Time",&t, 1);
 
             core::matrix4 world = driver->getTransform(video::ETS_WORLD);
             world = world.getTransposed();
@@ -140,8 +150,10 @@ int main(){
     //edit shader test
     io::path vsFileName = "media/terraindemo/opengl.vert"; // filename for the vertex shader
     io::path psFileName = "media/terraindemo/opengl.frag"; // filename for the pixel shader
-    io::path vsQuad = "media/terraindemo/quad.vert"; // filename for the vertex shader
-    io::path psQuad = "media/terraindemo/quad.frag"; // filename for the pixel shader
+    //io::path vsQuad = "media/terraindemo/quad.vert"; // filename for the vertex shader
+    //io::path psQuad = "media/terraindemo/quad.frag"; // filename for the pixel shader
+    io::path vsQuad = "media/terraindemo/vtest.vert"; // filename for the vertex shader
+    io::path psQuad = "media/terraindemo/ftest.frag"; // filename for the pixel shader
 
     if (!driver->queryFeature(video::EVDF_PIXEL_SHADER_1_1) &&
             !driver->queryFeature(video::EVDF_ARB_FRAGMENT_PROGRAM_1))
@@ -175,7 +187,7 @@ int main(){
 
     // add terrain scene node
     
-       const io::path& heightMapFileName = "media/terraindemo/terrain-heightmap.bmp";
+       const io::path& heightMapFileName = "media/terraindemo/hm2.jpg";
        const io::path& TextureFileName = "media/terraindemo/terrain-texture.jpg";
        terrain ter = terrain();
        ter.terrainHM(smgr, heightMapFileName);
@@ -192,10 +204,11 @@ int main(){
            driver->getTexture("media/terraindemo/irrlicht2_rt.jpg"),
            driver->getTexture("media/terraindemo/irrlicht2_ft.jpg"),
            driver->getTexture("media/terraindemo/irrlicht2_bk.jpg"));
-       scene::ISceneNode* skydome=smgr->addSkyDomeSceneNode(driver->getTexture("media/terraindemo/skydome.jpg"),16,8,0.95f,2.0f);
-
+       //scene::ISceneNode* skydome=smgr->addSkyDomeSceneNode(driver->getTexture("media/terraindemo/skydome.jpg"),16,8,0.95f,2.0f);
+        skydome=smgr->addSkyDomeSceneNode(
+            driver->getTexture("media/terraindemo/skydome.jpg"),30,8,0.96f,2.f);
        driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, true);
-
+    
        //add quad
        const irr::scene::IGeometryCreator *geomentryCreator = smgr->getGeometryCreator();
        s32 newMaterialType2 = 0;
@@ -205,23 +218,56 @@ int main(){
            psQuad, "pixelMain", video::EPST_PS_1_1,
            mc, video::EMT_TRANSPARENT_ALPHA_CHANNEL, 0, shadingLanguage);
        irr::scene::IMesh* plane = geomentryCreator->createPlaneMesh(
-                   irr::core::dimension2d<irr::f32>(300, 300),
-                   irr::core::dimension2d<irr::u32>(40, 40));
+                   irr::core::dimension2d<irr::f32>(800, 800),
+                   irr::core::dimension2d<irr::u32>(25, 25));
 
        irr::scene::ISceneNode* ground = smgr->addMeshSceneNode(plane);
-       ground->setMaterialTexture(0, driver->getTexture("media/terraindemo/water.jpg"));
-       ground->setPosition(irr::core::vector3df(5500.f, 0.f, 4500.f));
-       ground->setMaterialType((video::E_MATERIAL_TYPE)newMaterialType2);
-       plane->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+
+        video::ITexture* NormalMap = driver->getTexture("media/terraindemo/water-heightmap.jpg");
+      if (NormalMap)
+      {
+         driver->makeNormalMapTexture(NormalMap, 9.0f);
+         ground->setMaterialTexture(0, driver->getTexture("media/terraindemo/water-heightmap.jpg"));
+         ground->setMaterialTexture(1, NormalMap);
+         ground->setMaterialType((video::E_MATERIAL_TYPE)newMaterialType2);
+         ground->getMaterial(0).MaterialTypeParam = 0.035f;
+      }
 
 
+
+      // ground->setMaterialTexture(0, driver->getTexture("media/terraindemo/water-heightmap.jpg"));
+       ground->setPosition(irr::core::vector3df(0.f, 0.f, 0.f));
+      // ground->setMaterialType((video::E_MATERIAL_TYPE)newMaterialType2);
+      // plane->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+
+      //add qmap
+      
+     device->getFileSystem()->addFileArchive("media/map-20kdm2.pk3");
+
+       device->maximizeWindow();
+
+
+       //smgr->addCameraSceneNode(0, vector3df(0,30,-40), vector3df(0,5,0));
+       scene::IAnimatedMesh* mesh_map = smgr->getMesh("20kdm2.bsp");
+           scene::ISceneNode* node_map = 0;
+
+           if (mesh_map)
+               node_map = smgr->addOctreeSceneNode(mesh_map->getMesh(0), 0, -1, 128);
+
+           if (node_map)
+               node_map->setPosition(core::vector3df(-6000,30,-500));
+    start = std::chrono::system_clock::now();
     int lastFPS = -1;
-    
+   
     while(device->run())
     {
         driver->beginScene(true, true, video::SColor(255,200,200,200));
         smgr->drawAll();
         driver->endScene();
+        end = std::chrono::system_clock::now();
+        t = std::chrono::duration_cast<std::chrono::duration<float>>(start - end).count();
+        vector3df r = skydome->getRotation();
+        skydome->setRotation(r + vector3df(0,0.01,0));
         int fps = driver->getFPS();
        
                 if (lastFPS != fps)

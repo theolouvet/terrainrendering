@@ -1,7 +1,7 @@
 uniform mat4 mWorldViewProj;
 uniform mat4 mInvWorld;
 uniform mat4 mTransWorld;
-uniform vec3 mLightPos;
+uniform vec3 mCamPos;
 uniform vec4 mLightColor;
 
 void main(void)
@@ -14,7 +14,7 @@ void main(void)
 	
 	vec4 worldpos = gl_Vertex * mTransWorld;
 	
-	vec4 lightVector = worldpos - vec4(mLightPos,1.0);
+	vec4 lightVector = worldpos - vec4(mCamPos,1.0);
 	lightVector = normalize(lightVector);
 	
 	float tmp2 = dot(-lightVector, normal);

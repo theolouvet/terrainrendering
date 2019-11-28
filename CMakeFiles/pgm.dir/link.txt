@@ -1,1 +1,1 @@
-/usr/bin/c++   -g    CMakeFiles/pgm.dir/projet/src/main.cpp.o CMakeFiles/pgm.dir/projet/src/terrain.cpp.o  -o pgm -rdynamic -lIrrlicht 
+/usr/bin/c++  -g  -rdynamic CMakeFiles/pgm.dir/projet/src/main.cpp.o CMakeFiles/pgm.dir/projet/src/terrain.cpp.o  -o pgm -lIrrlicht 
